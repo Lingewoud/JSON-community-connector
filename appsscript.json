@@ -1,13 +1,13 @@
 {
   "dataStudio": {
-    "name":               "JSON connector - By Lingewoud.nl",
-    "logoUrl":            "https://github.com/Lingewoud/JSON-community-connector/blob/master/logo.png",
+    "name":               "JSON connector",
+    "logoUrl":            "https://github.com/Lingewoud/JSON-community-connector/raw/master/logo.png",
     "company":            "Lingewoud",
     "companyUrl":         "https://lingewoud.nl/",
     "addonUrl":           "https://github.com/Lingewoud/JSON-community-connector",
-    "supportUrl":         "https://github.com/Lingewoud/JSON-community-connector/support/issues",
-    "shortDescription" :  "Connect to JSON data",
-    "description":        "Connect to JSON data",
+    "supportUrl":         "https://github.com/Lingewoud/JSON-community-connector/issues",
+    "shortDescription" :  "Connect to flat JSON data",
+    "description":        "Connect to flat JSON data by URL",
     "sources":            [ "custom_json" ]
   }
 }
