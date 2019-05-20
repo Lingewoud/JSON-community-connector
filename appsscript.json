@@ -1,0 +1,13 @@
+{
+  "dataStudio": {
+    "name": "JSON connector - By Lingewoud.nl",
+    "logoUrl": "https://lingewoud.nl/typo3conf/ext/tpl_lingewoud/res/img/logo.png",
+    "company": "Lingewoud",
+    "companyUrl": "https://lingewoud.nl/",
+    "addonUrl": "https://lingewoud.nl/",
+    "supportUrl": "https://lingewoud.nl/",
+    "shortDescription" : "Connect to JSON data",
+    "description": "Connect to JSON data",
+    "sources": [ "custom_json" ]
+  }
+}
