@@ -8,6 +8,8 @@
     "supportUrl":         "https://github.com/Lingewoud/JSON-community-connector/issues",
     "shortDescription" :  "Connect to flat JSON data",
     "description":        "Connect to flat JSON data by URL",
-    "sources":            [ "custom_json" ]
+    "sources":            [ "custom_json" ],
+    "authType":           [ "NONE" ],
+    "feeType":            [ "FREE" ]
   }
 }
