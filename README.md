@@ -16,8 +16,7 @@ Enter the URL of a JSON data source. In case of a "Invalid JSON format" error, v
 ### Caching
 Enable caching by checking the 'Cache response' checkbox. This is usefull with large datasets. The cache will expire after ten minutes. The rows in your dataset may not exceed 100KB
 
-## First row
-The first row of the dataset is used to determine the data schema. 
+*The first row of the dataset is used to determine the data schema*
 
 ## Deploy a Community Connector yourself
 1. Visit [Google Apps Script](https://script.google.com/) and create a new
