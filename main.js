@@ -19,6 +19,11 @@
 //
 //  This copyright notice MUST APPEAR in all copies of the script!
 
+/**
+ * Throws and logs script exceptions.
+ *
+ * @param {String} message The exception message
+ */
 function sendUserError( message ) {
   var cc = DataStudioApp.createCommunityConnector();
       cc.newUserError()
@@ -28,14 +33,33 @@ function sendUserError( message ) {
   console.log(message);
 }
 
+/**
+ * function  `getAuthType()`
+ *
+ * @returns {Object} `AuthType` used by the connector.
+ */
 function getAuthType() {
   return { type: 'NONE' };
 }
 
+/**
+ * function  `isAdminUser()`
+ *
+ * @returns {Boolean} Currently just returns false. Should return true if the current authenticated user at the time
+ *                    of function execution is an admin user of the connector.
+ */
 function isAdminUser() {
   return false;
 }
 
+/**
+ * Returns the user configurable options for the connector.
+ *
+ * Required function for Community Connector.
+ *
+ * @param   {Object} request  Config request parameters.
+ * @returns {Object}          Connector configuration to be displayed to the user.
+ */
 function getConfig( request ) {
   var cc      = DataStudioApp.createCommunityConnector();
   var config  = cc.getConfig();
@@ -61,6 +85,12 @@ function getConfig( request ) {
   return config.build();
 }
 
+/**
+ * Gets UrlFetch response and parses JSON
+ *
+ * @param   {string} url  The URL to get the data from
+ * @returns {Object}      The response object
+ */
 function fetchJSON( url ) {
   try {
     var response = UrlFetchApp.fetch( url );
@@ -77,6 +107,13 @@ function fetchJSON( url ) {
   return content;
 }
 
+/**
+ * Gets cached response. If the response has not been cached, make
+ * the fetchJSON call, then cache and return the response.
+ *
+ * @param   {string} url  The URL to get the data from
+ * @returns {Object}      The response object
+ */
 function getCachedData( url ) {
   var cacheExpTime    = 600;
   var cache           = CacheService.getUserCache();
@@ -107,6 +144,13 @@ function getCachedData( url ) {
   return content;
 }
 
+/**
+ * Fetches data. Either by calling getCachedData or fetchJSON, depending on the cache configuration parameter.
+ *
+ * @param   {String}  url   The URL to get the data from
+ * @param   {Boolean} cache Parameter to determine whether the request should be cached
+ * @returns {Object}        The response object
+ */
 function fetchData( url, cache ) {
   if ( !url || !url.match( /^https?:\/\/.+$/g ) ) sendUserError( '"' + url + '" is not a valid url.' );
 
@@ -116,6 +160,14 @@ function fetchData( url, cache ) {
 
   return content;
 }
+
+/**
+ * Parses first line of content to determine the data schema
+ *
+ * @param   {Object}  request getSchema/getData request parameter.
+ * @param   {Object}  content The content object
+ * @return  {Object}           An object with the connector configuration
+ */
 
 function getFields( request, content ) {
   var cc            = DataStudioApp.createCommunityConnector();
@@ -135,12 +187,26 @@ function getFields( request, content ) {
   return fields;
 }
 
+/**
+ * Returns the schema for the given request.
+ *
+ * @param {Object} request Schema request parameters.
+ * @returns {Object} Schema for the given request.
+ */
 function getSchema( request ) {
   var content   = fetchData( request.configParams.url, request.configParams.cache );
   var fields    = getFields( request, content ).build();
   return { schema: fields };
 }
 
+
+/**
+ * Returns an object containing only the requested columns
+ *
+ * @param   {Object} content          The content object
+ * @param   {Object} requestedFields  Fields requested in the getData request.
+ * @returns {Object}                  An object only containing the requested columns.
+ */
 function getColumns(  content, requestedFields ) {
     return content.map(function( row ) {
     var rowValues = [];
@@ -153,6 +219,12 @@ function getColumns(  content, requestedFields ) {
   });
 }
 
+/**
+ * Returns the tabular data for the given request.
+ *
+ * @param   {Object} request  Data request parameters.
+ * @returns {Object}          Contains the schema and data for the given request.
+ */
 function getData( request ) {
   var content           = fetchData( request.configParams.url, request.configParams.cache  );
   var fields            = getFields( request, content );
