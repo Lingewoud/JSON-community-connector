@@ -19,15 +19,13 @@
 //
 //  This copyright notice MUST APPEAR in all copies of the script!
 
-var connector                 = connector || {};
-var connector.cacheExpTime    = 60;
-var connector.cacheTag        = 'JSONResults';
-
 function sendUserError( message ) {
   var cc = DataStudioApp.createCommunityConnector();
-      cc.newDebugError()
+      cc.newUserError()
         .setText( message )
         .throwException();
+
+  console.log(message);
 }
 
 function getAuthType() {
@@ -52,34 +50,67 @@ function getConfig( request ) {
     .setHelpText( 'e.g. https://my-url.org/json')
     .setPlaceholder( 'https://my-url.org/json' );
 
+  config.newCheckbox()
+    .setId( 'cache' )
+    .setName( 'Cache response' )
+    .setHelpText( 'Usefull with big datasets. Response is cached for 10 minutes')
+    .setAllowOverride(true);
+
   config.setDateRangeRequired( false );
 
   return config.build();
 }
 
-function getCachedData( url ) {
-  var cache       = CacheService.getUserCache();
-  var cachedData  = cache.get( connector.cacheKey );
-
-  if ( cachedData !== null ) {
-    var response = cachedData;
-  } else {
-    try {
-      var response = UrlFetchApp.fetch( url );
-    } catch (e) {
-      sendUserError( '"' + url + '" returned an error' );
-    }
-
-    cache.put(connector.cacheKey, response, connector.cacheExpiration);
+function fetchJSON( url ) {
+  try {
+    var response = UrlFetchApp.fetch( url );
+  } catch ( e ) {
+    sendUserError( '"' + url + '" returned an error:' + e );
   }
-  return response;
+
+  try {
+    var content   = JSON.parse( response )
+  } catch( e ) {
+    sendUserError( 'Invalid JSON format:' + e );
+  }
+
+  return content;
 }
 
-function fetchData( url ) {
+function getCachedData( url ) {
+  var cacheExpTime    = 600;
+  var cache           = CacheService.getUserCache();
+  var cacheKey        = url.replace(/[^a-zA-Z0-9]+/g, '');
+  var cacheKeyString  = cache.get( cacheKey + '.keys' );
+  var cacheKeys       = ( cacheKeyString !== null ) ? cacheKeyString.split( ',' ) : [];
+  var cacheData       = {};
+  var content         = [];
+
+
+  if( cacheKeyString !== null && cacheKeys.length > 0 ) {
+    cacheData = cache.getAll( cacheKeys );
+
+    for ( var key  in cacheKeys ) {
+      if( cacheData[ cacheKeys[key] ] != undefined ) content.push( JSON.parse( cacheData[ cacheKeys[key] ] ) );
+    }
+  } else {
+    content    = fetchJSON( url );
+
+    for ( var key  in content ) {
+      cacheData[ cacheKey + '.' + key ] = JSON.stringify( content[ key ] );
+    }
+
+    cache.putAll( cacheData );
+    cache.put( cacheKey + '.keys', Object.keys( cacheData ), cacheExpTime );
+  }
+
+  return content;
+}
+
+function fetchData( url, cache ) {
   if ( !url || !url.match( /^https?:\/\/.+$/g ) ) sendUserError( '"' + url + '" is not a valid url.' );
 
-  var response  = getCachedData( url );
-  var content   = JSON.parse( response )
+  var content  = ( cache ) ? getCachedData( url ) : fetchJSON( url );
 
   if ( !content ) sendUserError( '"' + url + '" returned no content.' );
 
@@ -105,9 +136,8 @@ function getFields( request, content ) {
 }
 
 function getSchema( request ) {
-  var content   = fetchData( request.configParams.url );
+  var content   = fetchData( request.configParams.url, request.configParams.cache );
   var fields    = getFields( request, content ).build();
-
   return { schema: fields };
 }
 
@@ -124,7 +154,7 @@ function getColumns(  content, requestedFields ) {
 }
 
 function getData( request ) {
-  var content           = fetchData( request.configParams.url );
+  var content           = fetchData( request.configParams.url, request.configParams.cache  );
   var fields            = getFields( request, content );
   var requestedFieldIds = request.fields.map( function( field ) { return field.name; } );
   var requestedFields   = fields.forIds( requestedFieldIds );
