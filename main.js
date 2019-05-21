@@ -175,14 +175,13 @@ function getFields( request, content ) {
   var types         = cc.FieldType;
   var aggregations  = cc.AggregationType;
 
-  Object.keys( content[0] ).forEach( function( key ) {
+  Object.keys( content[ 0 ] ).forEach( function( key ) {
       var isNumeric   = !isNaN( parseFloat( content[ 0 ][ key ] ) ) && isFinite( content[ 0 ][ key ] );
       var field       = ( isNumeric ) ? fields.newMetric() : fields.newDimension();
 
       field.setType( ( isNumeric ) ? types.NUMBER : types.TEXT );
       field.setId( key.replace(/\s/g, '_' ).toLowerCase() );
       field.setName( key );
-    }
   } );
 
   return fields;
@@ -200,6 +199,22 @@ function getSchema( request ) {
   return { schema: fields };
 }
 
+/**
+ * Validates the row values. Only numbers and strings are allowed
+ *
+ * @param   {Mixed} val   The value to validate
+ * @returns {Mixed}       Either a string or number
+ */
+function validateValue( val ) {
+  switch ( typeof val ) {
+    case "string":
+    case "number":
+      return val;
+    case "object":
+      return JSON.stringify( val );
+  }
+  return "";
+}
 
 /**
  * Returns an object containing only the requested columns
@@ -209,23 +224,13 @@ function getSchema( request ) {
  * @returns {Object}                  An object only containing the requested columns.
  */
 function getColumns(  content, requestedFields ) {
-    return content.map(function( row ) {
+  return content.map(function( row ) {
     var rowValues = [];
 
     requestedFields.asArray().forEach( function ( field ) {
-      var fieldValue = row[ field.getId() ];
-      switch ( typeof fieldValue ) {
-        case "string":
-        case "number":
-          break;
-        case "object":
-          var fieldValue = JSON.stringify( row[ field.getId() ] );
-          break;
-        default
-          var fieldValue = 0;
-      }
-      rowValues.push( ( typeof row[ field.getId() ] == ) );
+      rowValues.push( validateValue( row[ field.getId() ] ) );
     });
+
 
     return { values: rowValues };
   });
@@ -245,6 +250,6 @@ function getData( request ) {
 
   return {
     schema: requestedFields.build(),
-    rows: getColumns(  content, requestedFields )
+    rows: getColumns(  content, requestedFields)
   };
 }
