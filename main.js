@@ -66,7 +66,7 @@ function getConfig( request ) {
 
   config.newInfo()
     .setId( 'instructions' )
-    .setText( 'Fill out the form to connect to a JSON data source. Nested JSON data is not supported. ' );
+    .setText( 'Fill out the form to connect to a JSON data source.' );
 
   config.newTextInput()
     .setId( 'url' )
@@ -101,7 +101,7 @@ function fetchJSON( url ) {
   try {
     var content   = JSON.parse( response )
   } catch( e ) {
-    sendUserError( 'Invalid JSON format:' + e );
+    sendUserError( 'Invalid JSON format. ' + e );
   }
 
   return content;
@@ -176,12 +176,13 @@ function getFields( request, content ) {
   var aggregations  = cc.AggregationType;
 
   Object.keys( content[0] ).forEach( function( key ) {
-    var isNumeric   = !isNaN( parseFloat( content[0][ key] ) ) && isFinite( content[0][ key] );
-    var field       = ( isNumeric ) ? fields.newMetric() : fields.newDimension();
+      var isNumeric   = !isNaN( parseFloat( content[ 0 ][ key ] ) ) && isFinite( content[ 0 ][ key ] );
+      var field       = ( isNumeric ) ? fields.newMetric() : fields.newDimension();
 
-    field.setType( ( isNumeric ) ? types.NUMBER : types.TEXT );
-    field.setId( key.replace(/\s/g, '_' ).toLowerCase() );
-    field.setName( key );
+      field.setType( ( isNumeric ) ? types.NUMBER : types.TEXT );
+      field.setId( key.replace(/\s/g, '_' ).toLowerCase() );
+      field.setName( key );
+    }
   } );
 
   return fields;
@@ -211,8 +212,19 @@ function getColumns(  content, requestedFields ) {
     return content.map(function( row ) {
     var rowValues = [];
 
-    requestedFields.asArray().forEach(function ( field ) {
-      rowValues.push( row[ field.getId() ]);
+    requestedFields.asArray().forEach( function ( field ) {
+      var fieldValue = row[ field.getId() ];
+      switch ( typeof fieldValue ) {
+        case "string":
+        case "number":
+          break;
+        case "object":
+          var fieldValue = JSON.stringify( row[ field.getId() ] );
+          break;
+        default
+          var fieldValue = 0;
+      }
+      rowValues.push( ( typeof row[ field.getId() ] == ) );
     });
 
     return { values: rowValues };
