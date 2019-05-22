@@ -1,4 +1,4 @@
-# JSON community connector - Community Connector for Data Studio
+# JSON connect - Community Connector for Data Studio
 *This is not an official Google product*
 
 This [Data Studio](https://datastudio.google.com) [Community
@@ -6,7 +6,7 @@ Connector](https://developers.google.com/datastudio/connector) lets users connec
 to custom JSON data sources
 
 ## Try the Community Connector in Data Studio
-You can try out the latest production version of the [JSON community connector](https://datastudio.google.com/datasources/create?connectorId=AKfycbzDZJEtN414a8F_vWQ3z9MHFJKXpXzGz8rq7De5jfPMmJz-k49Dpd4gbW5olVa0BvI)
+You can try out the latest production version of [JSON connect](https://datastudio.google.com/datasources/create?connectorId=AKfycbzDZJEtN414a8F_vWQ3z9MHFJKXpXzGz8rq7De5jfPMmJz-k49Dpd4gbW5olVa0BvI)
 
 ## Configuration
 
