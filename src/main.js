@@ -166,13 +166,38 @@ function fetchData(url, cache) {
 }
 
 /**
+ * Extract recursively the fields of the object and adds it in fields
+ *
+ * @param   {Object}  fields  The list of fields
+ * @param   {String}  key     The key value of the current element
+ * @param   {?}       value   The value of the current element
+ */
+function createFields(fields, key, value) {
+  if (typeof value === 'object') {
+    Object.keys(value).forEach(function(key) {
+      createField(fields, key, value[key]);
+    });
+  } else if (Array.isArray(value)) {
+    if (value.length > 0) {
+      createField(fields, null, value[0]);
+    }
+  } else if (key !== null) {
+    var isNumeric = !isNaN(parseFloat(value)) && isFinite(value);
+    var field = isNumeric ? fields.newMetric() : fields.newDimension();
+
+    field.setType(isNumeric ? types.NUMBER : types.TEXT);
+    field.setId(key.replace(/\s/g, '_').toLowerCase());
+    field.setName(key);    
+  }
+}
+
+/**
  * Parses first line of content to determine the data schema
  *
  * @param   {Object}  request getSchema/getData request parameter.
  * @param   {Object}  content The content object
  * @return  {Object}           An object with the connector configuration
  */
-
 function getFields(request, content) {
   var cc = DataStudioApp.createCommunityConnector();
   var fields = cc.getFields();
@@ -183,16 +208,8 @@ function getFields(request, content) {
 
   if (typeof content[0] !== 'object' || content[0] === null)
     sendUserError('Invalid JSON format');
-
-  Object.keys(content[0]).forEach(function(key) {
-    var isNumeric =
-      !isNaN(parseFloat(content[0][key])) && isFinite(content[0][key]);
-    var field = isNumeric ? fields.newMetric() : fields.newDimension();
-
-    field.setType(isNumeric ? types.NUMBER : types.TEXT);
-    field.setId(key.replace(/\s/g, '_').toLowerCase());
-    field.setName(key);
-  });
+  
+  createFields(fields, null, content);
 
   return fields;
 }
