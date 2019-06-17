@@ -169,10 +169,11 @@ function fetchData(url, cache) {
  * Extract recursively the fields of the object and adds it in fields
  *
  * @param   {Object}  fields  The list of fields
+ * @param   {Object}  types   The list of types
  * @param   {String}  key     The key value of the current element
  * @param   {Mixed}   value   The value of the current element
  */
-function createFields(fields, key, value) {
+function createFields(fields, types, key, value) {
   if (typeof value === 'object' && !Array.isArray(value)) {
     Object.keys(value).forEach(function(currentKey) {
       // currentKey cannot contain '.' other the path would not be parsable
@@ -182,7 +183,7 @@ function createFields(fields, key, value) {
       if (elementKey != null) {
         elementKey += '.' + currentKey
       }
-      createFields(fields, elementKey, value[key]);
+      createFields(fields, types, elementKey, value[key]);
     });
   } else if (key !== null) {
     var isNumeric = !isNaN(parseFloat(value)) && isFinite(value);
@@ -212,7 +213,7 @@ function getFields(request, content) {
   if (typeof content[0] !== 'object' || content[0] === null)
     sendUserError('Invalid JSON format');
   
-  createFields(fields, null, content[0]);
+  createFields(fields, types, null, content[0]);
 
   return fields;
 }
