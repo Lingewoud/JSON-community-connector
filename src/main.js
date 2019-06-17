@@ -82,6 +82,23 @@ function getConfig(request) {
     .setName('Cache response')
     .setHelpText('Usefull with big datasets. Response is cached for 10 minutes')
     .setAllowOverride(true);
+  
+  var option1 = config.newOptionBuilder()
+    .setLabel("Text")
+    .setValue("text");
+
+  var option2 = config.newOptionBuilder()
+    .setLabel("Inline")
+    .setValue("inline");
+
+  config
+    .newSelectSingle()
+    .setId('nestedData')
+    .setName('Nested data')
+    .setHelpText('How to import nested data, as text or inline.')
+    .setAllowOverride(true)
+    .addOption(option1)
+    .addOption(option2);
 
   config.setDateRangeRequired(false);
 
@@ -172,8 +189,9 @@ function fetchData(url, cache) {
  * @param   {Object}  types   The list of types
  * @param   {String}  key     The key value of the current element
  * @param   {Mixed}   value   The value of the current element
+ * @param   {boolean} isInline if true 
  */
-function createFields(fields, types, key, value) {
+function createFields(fields, types, key, value, isInline) {
   if (typeof value === 'object' && !Array.isArray(value)) {
     Object.keys(value).forEach(function(currentKey) {
       // currentKey cannot contain '.' other the path would not be parsable
@@ -183,7 +201,9 @@ function createFields(fields, types, key, value) {
       if (elementKey != null) {
         elementKey += '.' + currentKey
       }
-      createFields(fields, types, elementKey, value[key]);
+      if (isInline || key == null) { 
+        createFields(fields, types, elementKey, value[key], isInline);
+      }
     });
   } else if (key !== null) {
     var isNumeric = !isNaN(parseFloat(value)) && isFinite(value);
@@ -207,13 +227,14 @@ function getFields(request, content) {
   var fields = cc.getFields();
   var types = cc.FieldType;
   var aggregations = cc.AggregationType;
+  var isInline = request.configParams.nestedData == 'inline';
 
   if (!Array.isArray(content)) content = [content];
 
   if (typeof content[0] !== 'object' || content[0] === null)
     sendUserError('Invalid JSON format');
   
-  createFields(fields, types, null, content[0]);
+  createFields(fields, types, null, content[0], isInline);
 
   return fields;
 }
