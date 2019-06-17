@@ -170,24 +170,27 @@ function fetchData(url, cache) {
  *
  * @param   {Object}  fields  The list of fields
  * @param   {String}  key     The key value of the current element
- * @param   {?}       value   The value of the current element
+ * @param   {Mixed}   value   The value of the current element
  */
 function createFields(fields, key, value) {
-  if (typeof value === 'object') {
-    Object.keys(value).forEach(function(key) {
-      createField(fields, key, value[key]);
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    Object.keys(value).forEach(function(currentKey) {
+      // currentKey cannot contain '.' other the path would not be parsable
+      currentKey = currentKey.replace('.', '_')
+      var elementKey = key;
+      // contruct the path
+      if (elementKey != null) {
+        elementKey += '.' + currentKey
+      }
+      createFields(fields, elementKey, value[key]);
     });
-  } else if (Array.isArray(value)) {
-    if (value.length > 0) {
-      createField(fields, null, value[0]);
-    }
   } else if (key !== null) {
     var isNumeric = !isNaN(parseFloat(value)) && isFinite(value);
     var field = isNumeric ? fields.newMetric() : fields.newDimension();
 
     field.setType(isNumeric ? types.NUMBER : types.TEXT);
     field.setId(key.replace(/\s/g, '_').toLowerCase());
-    field.setName(key);    
+    field.setName(key);  
   }
 }
 
@@ -209,7 +212,7 @@ function getFields(request, content) {
   if (typeof content[0] !== 'object' || content[0] === null)
     sendUserError('Invalid JSON format');
   
-  createFields(fields, null, content);
+  createFields(fields, null, content[0]);
 
   return fields;
 }
@@ -257,7 +260,25 @@ function getColumns(content, requestedFields) {
     var rowValues = [];
 
     requestedFields.asArray().forEach(function(field) {
-      rowValues.push(validateValue(row[field.getId()]));
+      var currentValue = row;
+      var valuePathes = field.getId().split('.');
+      for (var index in valuePathes) {
+        var currentPath = valuePathes[index];
+        if (currentValue[currentPath] !== undefined) {
+          currentValue = currentValue[currentPath];
+          continue;
+        }
+        var keys = Object.keys(currentValue)
+        for (var index_keys in keys) {
+          // currentKey cannot contain '.' other the path would not be parsable
+          var key = keys[index_keys].replace(/\s/g, '_');
+          if (key == currentPath) {
+            currentValue = currentValue[keys[index_keys]];
+            break;
+          }
+        }
+      }
+      rowValues.push(validateValue(currentValue));
     });
 
     return {values: rowValues};
