@@ -25,12 +25,11 @@
  * @param {String} message The exception message
  */
 function sendUserError(message) {
+  console.log(message);
   var cc = DataStudioApp.createCommunityConnector();
   cc.newUserError()
     .setText(message)
     .throwException();
-
-  console.log(message);
 }
 
 /**
@@ -176,9 +175,11 @@ function getCachedData(url) {
 function fetchData(url, cache) {
   if (!url || !url.match(/^https?:\/\/.+$/g))
     sendUserError('"' + url + '" is not a valid url.');
-
-  var content = cache ? getCachedData(url) : fetchJSON(url);
-
+  try {
+    var content = cache ? getCachedData(url) : fetchJSON(url);
+  } catch (e) {
+    sendUserError('Unable to download or cache "' + url + '". Error: \n' + e + '\n' + e.stack);
+  }
   if (!content) sendUserError('"' + url + '" returned no content.');
 
   return content;
