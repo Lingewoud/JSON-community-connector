@@ -194,8 +194,10 @@ function fetchData(url, cache) {
  */
 function createField(fields, types, key, value) {
   var isNumeric = !isNaN(parseFloat(value)) && isFinite(value);
+  var isBoolean = value === true || value === false;
   var field = isNumeric ? fields.newMetric() : fields.newDimension();
-  field.setType(isNumeric ? types.NUMBER : types.TEXT);
+  var type = isNumeric ? types.NUMBER : isBoolean ? types.BOOLEAN : types.TEXT;
+  field.setType(type);
   field.setId(key.replace(/\s/g, '_').toLowerCase());
   field.setName(key);
 }
@@ -283,6 +285,7 @@ function validateValue(val) {
   switch (typeof val) {
     case 'string':
     case 'number':
+    case 'boolean':
       return val;
     case 'object':
       return JSON.stringify(val);
