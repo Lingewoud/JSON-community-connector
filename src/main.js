@@ -210,6 +210,9 @@ function createField( fields, types, key, value ) {
 function createFields(fields, types, key, value, isInline) {
   if (typeof value === 'object' && !Array.isArray(value)) {
     Object.keys(value).forEach(function(currentKey) {
+      if (currentKey == '' || currentKey == null) {
+        return;
+      }
       currentKey = currentKey.replace('.', '_')
       var elementKey = key;
       if (elementKey != null) {
@@ -217,7 +220,7 @@ function createFields(fields, types, key, value, isInline) {
       } else {
         elementKey = currentKey 
       }
-      if (isInline) { 
+      if (isInline && value[currentKey] != null) { 
         createFields(fields, types, elementKey, value[currentKey], isInline);
       } else {
         createField(fields, types, currentKey, value)
@@ -246,7 +249,11 @@ function getFields(request, content) {
 
   if (typeof content[0] !== 'object' || content[0] === null)
     sendUserError('Invalid JSON format');
-  createFields(fields, types, null, content[0], isInline);
+  try {
+    createFields(fields, types, null, content[0], isInline);
+  } catch (e) {
+    sendUserError("Unable to identify the field. Error: \n" + e + "\n" + e.stack)
+  }
   return fields;
 }
 
@@ -307,7 +314,7 @@ function getColumns(content, requestedFields) {
         var keys = Object.keys(currentValue);
 
         for (var index_keys in keys) {
-          var key = keys[index_keys].replace(/\s/g, '_');
+          var key = keys[index_keys].replace(/\s/g, '_').toLowerCase();
           if (key == currentPath) {
             currentValue = currentValue[keys[index_keys]];
             break;
