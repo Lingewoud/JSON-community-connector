@@ -200,9 +200,11 @@ function createFields(fields, types, key, value, isInline) {
       // contruct the path
       if (elementKey != null) {
         elementKey += '.' + currentKey
+      } else {
+        elementKey = currentKey 
       }
       if (isInline || key == null) { 
-        createFields(fields, types, elementKey, value[key], isInline);
+        createFields(fields, types, elementKey, value[currentKey], isInline);
       }
     });
   } else if (key !== null) {
