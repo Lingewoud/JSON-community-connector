@@ -208,7 +208,7 @@ function createField( fields, types, key, value ) {
  * @param   {boolean} isInline if true
  */
 function createFields(fields, types, key, value, isInline) {
-  if (typeof value === 'object' && !Array.isArray(value)) {
+  if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
     Object.keys(value).forEach(function(currentKey) {
       if (currentKey == '' || currentKey == null) {
         return;
