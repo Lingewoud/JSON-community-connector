@@ -64,6 +64,14 @@ function getConfig(request) {
   var cc = DataStudioApp.createCommunityConnector();
   var config = cc.getConfig();
 
+  var option1 = config.newOptionBuilder()
+    .setLabel("Text")
+    .setValue("text");
+
+  var option2 = config.newOptionBuilder()
+    .setLabel("Inline")
+    .setValue("inline");
+
   config
     .newInfo()
     .setId('instructions')
@@ -82,14 +90,6 @@ function getConfig(request) {
     .setName('Cache response')
     .setHelpText('Usefull with big datasets. Response is cached for 10 minutes')
     .setAllowOverride(true);
-  
-  var option1 = config.newOptionBuilder()
-    .setLabel("Text")
-    .setValue("text");
-
-  var option2 = config.newOptionBuilder()
-    .setLabel("Inline")
-    .setValue("inline");
 
   config
     .newSelectSingle()
@@ -183,37 +183,48 @@ function fetchData(url, cache) {
 }
 
 /**
- * Extract recursively the fields of the object and adds it in fields
+ *  Creates the fields
  *
  * @param   {Object}  fields  The list of fields
  * @param   {Object}  types   The list of types
  * @param   {String}  key     The key value of the current element
  * @param   {Mixed}   value   The value of the current element
- * @param   {boolean} isInline if true 
+ */
+function createField( fields, types, key, value ) {
+  var isNumeric = !isNaN(parseFloat(value)) && isFinite(value);
+  var field = isNumeric ? fields.newMetric() : fields.newDimension();
+  field.setType(isNumeric ? types.NUMBER : types.TEXT);
+  field.setId(key.replace(/\s/g, '_').toLowerCase());
+  field.setName(key);
+}
+
+/**
+ * Extracts the objects recursive fields and adds it to fields
+ *
+ * @param   {Object}  fields  The list of fields
+ * @param   {Object}  types   The list of types
+ * @param   {String}  key     The key value of the current element
+ * @param   {Mixed}   value   The value of the current element
+ * @param   {boolean} isInline if true
  */
 function createFields(fields, types, key, value, isInline) {
   if (typeof value === 'object' && !Array.isArray(value)) {
     Object.keys(value).forEach(function(currentKey) {
-      // currentKey cannot contain '.' other the path would not be parsable
       currentKey = currentKey.replace('.', '_')
       var elementKey = key;
-      // contruct the path
       if (elementKey != null) {
         elementKey += '.' + currentKey
       } else {
         elementKey = currentKey 
       }
-      if (isInline || key == null) { 
+      if (isInline) { 
         createFields(fields, types, elementKey, value[currentKey], isInline);
+      } else {
+        createField(fields, types, currentKey, value)
       }
     });
   } else if (key !== null) {
-    var isNumeric = !isNaN(parseFloat(value)) && isFinite(value);
-    var field = isNumeric ? fields.newMetric() : fields.newDimension();
-
-    field.setType(isNumeric ? types.NUMBER : types.TEXT);
-    field.setId(key.replace(/\s/g, '_').toLowerCase());
-    field.setName(key);  
+    createField(fields, types, key, value)
   }
 }
 
@@ -235,9 +246,7 @@ function getFields(request, content) {
 
   if (typeof content[0] !== 'object' || content[0] === null)
     sendUserError('Invalid JSON format');
-  
   createFields(fields, types, null, content[0], isInline);
-
   return fields;
 }
 
@@ -285,16 +294,19 @@ function getColumns(content, requestedFields) {
 
     requestedFields.asArray().forEach(function(field) {
       var currentValue = row;
-      var valuePathes = field.getId().split('.');
-      for (var index in valuePathes) {
-        var currentPath = valuePathes[index];
+      var valuePaths = field.getId().split('.');
+
+      for (var index in valuePaths) {
+        var currentPath = valuePaths[index];
+
         if (currentValue[currentPath] !== undefined) {
           currentValue = currentValue[currentPath];
           continue;
         }
-        var keys = Object.keys(currentValue)
+
+        var keys = Object.keys(currentValue);
+
         for (var index_keys in keys) {
-          // currentKey cannot contain '.' other the path would not be parsable
           var key = keys[index_keys].replace(/\s/g, '_');
           if (key == currentPath) {
             currentValue = currentValue[keys[index_keys]];
@@ -302,6 +314,7 @@ function getColumns(content, requestedFields) {
           }
         }
       }
+
       rowValues.push(validateValue(currentValue));
     });
 
