@@ -186,6 +186,28 @@ function fetchData(url, cache) {
 }
 
 /**
+ * Matches the field value to a semantic
+ *
+ * @param   {Mixed}   value   The field value
+ * @param   {Object}  types   The list of types
+ * @return  {string}          The semantic type
+ */
+function getSemanticType(value, types) {
+  if(!isNaN(parseFloat(value)) && isFinite(value)) {
+    return types.NUMBER;
+  } else if( value === true || value === false) {
+    return types.BOOLEAN;
+  } else if( typeof value != 'object' && value != null ) {
+    if ( value.match( new RegExp( /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi ) )) {
+      return types.URL;
+    } else if (!isNaN(Date.parse(value))) {
+      return types.YEAR_MONTH_DAY_HOUR;
+    }
+  }
+  return types.TEXT;
+}
+
+/**
  *  Creates the fields
  *
  * @param   {Object}  fields  The list of fields
@@ -194,14 +216,29 @@ function fetchData(url, cache) {
  * @param   {Mixed}   value   The value of the current element
  */
 function createField(fields, types, key, value) {
-  var isNumeric = !isNaN(parseFloat(value)) && isFinite(value);
-  var isBoolean = value === true || value === false;
-  var isDate = !isNaN(Date.parse(value));
-  var field = isNumeric ? fields.newMetric() : fields.newDimension();
-  var type = isNumeric ? types.NUMBER : isBoolean ? types.BOOLEAN : isDate ? types.YEAR_MONTH_DAY_HOUR : types.TEXT;
-  field.setType(type);
+  var semanticType = getSemanticType(value, types);
+  var field = (semanticType == types.NUMBER ) ? fields.newMetric() : fields.newDimension();
+
+  field.setType(semanticType);
   field.setId(key.replace(/\s/g, '_').toLowerCase());
   field.setName(key);
+}
+
+/**
+ * Handles keys for recursive fields
+ *
+ * @param   {String}  currentKey  The key value of the current element
+ * @param   {Mixed}   key         The key value of the parent element
+ * @returns {String}  if true
+ */
+function getElementKey( key, currentKey) {
+      if (currentKey == '' || currentKey == null) {
+        return;
+      }
+      if (key  != null) {
+        return key + '.' + currentKey.replace('.', '_');
+      }
+      return currentKey.replace('.', '_');
 }
 
 /**
@@ -216,16 +253,8 @@ function createField(fields, types, key, value) {
 function createFields(fields, types, key, value, isInline) {
   if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
     Object.keys(value).forEach(function(currentKey) {
-      if (currentKey == '' || currentKey == null) {
-        return;
-      }
-      currentKey = currentKey.replace('.', '_');
-      var elementKey = key;
-      if (elementKey != null) {
-        elementKey += '.' + currentKey;
-      } else {
-        elementKey = currentKey;
-      }
+      var elementKey = getElementKey(key, currentKey);
+
       if (isInline && value[currentKey] != null) {
         createFields(fields, types, elementKey, value[currentKey], isInline);
       } else {
@@ -268,13 +297,29 @@ function getFields(request, content) {
 /**
  * Returns the schema for the given request.
  *
- * @param {Object} request Schema request parameters.
+ * @param   {Object} request Schema request parameters.
  * @returns {Object} Schema for the given request.
  */
 function getSchema(request) {
   var content = fetchData(request.configParams.url, request.configParams.cache);
   var fields = getFields(request, content).build();
   return {schema: fields};
+}
+
+/**
+ *  Converts date strings to YYYYMMDDHH:mm:ss
+ *
+ * @param   {String} val  Date string
+ * @returns {String}      Converted date string
+ */
+function convertDate(val) {
+  var date = new Date(val);
+  return date.getUTCFullYear() +
+    ("0" + (date.getUTCMonth()+1)).slice(-2) +
+    ("0" + date.getUTCDate()).slice(-2) +
+    ("0" + date.getUTCHours()).slice(-2) +
+    ("0" + date.getUTCMinutes()).slice(-2) +
+    ("0" + date.getUTCSeconds()).slice(-2);
 }
 
 /**
@@ -286,21 +331,9 @@ function getSchema(request) {
  */
 function validateValue(field, val) {
   if (field.getType() == 'YEAR_MONTH_DAY_HOUR') {
-    var date = new Date(val);
-    var hour = date.getHours()
-    if (hour < 10) {
-      hour = '0' + hour
-    }
-    var month = date.getMonth() + 1
-    if (month < 10) {
-      month = '0' + month
-    }
-    var day = date.getDate()
-    if (day < 10) {
-      day = '0' + day
-    }
-    val = ('' + date.getFullYear() + month + day + hour)
+    val =  convertDate(val);
   }
+
   switch (typeof val) {
     case 'string':
     case 'number':
