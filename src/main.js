@@ -196,8 +196,9 @@ function fetchData(url, cache) {
 function createField(fields, types, key, value) {
   var isNumeric = !isNaN(parseFloat(value)) && isFinite(value);
   var isBoolean = value === true || value === false;
+  var isDate = !isNaN(Date.parse(value));
   var field = isNumeric ? fields.newMetric() : fields.newDimension();
-  var type = isNumeric ? types.NUMBER : isBoolean ? types.BOOLEAN : types.TEXT;
+  var type = isNumeric ? types.NUMBER : isBoolean ? types.BOOLEAN : isDate ? types.YEAR_MONTH_DAY_HOUR : types.TEXT;
   field.setType(type);
   field.setId(key.replace(/\s/g, '_').toLowerCase());
   field.setName(key);
@@ -277,12 +278,29 @@ function getSchema(request) {
 }
 
 /**
- * Validates the row values. Only numbers and strings are allowed
+ * Validates the row values. Only numbers, boolean, date and strings are allowed
  *
+ * @param   {Field} field The field declaration
  * @param   {Mixed} val   The value to validate
  * @returns {Mixed}       Either a string or number
  */
-function validateValue(val) {
+function validateValue(field, val) {
+  if (field.getType() == 'YEAR_MONTH_DAY_HOUR') {
+    var date = new Date(val);
+    var hour = date.getHours()
+    if (hour < 10) {
+      hour = '0' + hour
+    }
+    var month = date.getMonth() + 1
+    if (month < 10) {
+      month = '0' + month
+    }
+    var day = date.getDate()
+    if (day < 10) {
+      day = '0' + day
+    }
+    val = ('' + date.getFullYear() + month + day + hour)
+  }
   switch (typeof val) {
     case 'string':
     case 'number':
@@ -330,7 +348,7 @@ function getColumns(content, requestedFields) {
         }
       }
 
-      rowValues.push(validateValue(currentValue));
+      rowValues.push(validateValue(field, currentValue));
     });
 
     return {values: rowValues};
