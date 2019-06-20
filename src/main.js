@@ -178,7 +178,14 @@ function fetchData(url, cache) {
   try {
     var content = cache ? getCachedData(url) : fetchJSON(url);
   } catch (e) {
-    sendUserError('Unable to download or cache "' + url + '". Error: \n' + e + '\n' + e.stack);
+    sendUserError(
+      'Unable to download or cache "' +
+        url +
+        '". Error: \n' +
+        e +
+        '\n' +
+        e.stack
+    );
   }
   if (!content) sendUserError('"' + url + '" returned no content.');
 
@@ -193,12 +200,18 @@ function fetchData(url, cache) {
  * @return  {string}          The semantic type
  */
 function getSemanticType(value, types) {
-  if(!isNaN(parseFloat(value)) && isFinite(value)) {
+  if (!isNaN(parseFloat(value)) && isFinite(value)) {
     return types.NUMBER;
-  } else if( value === true || value === false) {
+  } else if (value === true || value === false) {
     return types.BOOLEAN;
-  } else if( typeof value != 'object' && value != null ) {
-    if ( value.match( new RegExp( /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi ) )) {
+  } else if (typeof value != 'object' && value != null) {
+    if (
+      value.match(
+        new RegExp(
+          /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi
+        )
+      )
+    ) {
       return types.URL;
     } else if (!isNaN(Date.parse(value))) {
       return types.YEAR_MONTH_DAY_HOUR;
@@ -217,7 +230,8 @@ function getSemanticType(value, types) {
  */
 function createField(fields, types, key, value) {
   var semanticType = getSemanticType(value, types);
-  var field = (semanticType == types.NUMBER ) ? fields.newMetric() : fields.newDimension();
+  var field =
+    semanticType == types.NUMBER ? fields.newMetric() : fields.newDimension();
 
   field.setType(semanticType);
   field.setId(key.replace(/\s/g, '_').toLowerCase());
@@ -231,14 +245,14 @@ function createField(fields, types, key, value) {
  * @param   {Mixed}   key         The key value of the parent element
  * @returns {String}  if true
  */
-function getElementKey( key, currentKey) {
-      if (currentKey == '' || currentKey == null) {
-        return;
-      }
-      if (key  != null) {
-        return key + '.' + currentKey.replace('.', '_');
-      }
-      return currentKey.replace('.', '_');
+function getElementKey(key, currentKey) {
+  if (currentKey == '' || currentKey == null) {
+    return;
+  }
+  if (key != null) {
+    return key + '.' + currentKey.replace('.', '_');
+  }
+  return currentKey.replace('.', '_');
 }
 
 /**
@@ -314,12 +328,14 @@ function getSchema(request) {
  */
 function convertDate(val) {
   var date = new Date(val);
-  return date.getUTCFullYear() +
-    ("0" + (date.getUTCMonth()+1)).slice(-2) +
-    ("0" + date.getUTCDate()).slice(-2) +
-    ("0" + date.getUTCHours()).slice(-2) +
-    ("0" + date.getUTCMinutes()).slice(-2) +
-    ("0" + date.getUTCSeconds()).slice(-2);
+  return (
+    date.getUTCFullYear() +
+    ('0' + (date.getUTCMonth() + 1)).slice(-2) +
+    ('0' + date.getUTCDate()).slice(-2) +
+    ('0' + date.getUTCHours()).slice(-2) +
+    ('0' + date.getUTCMinutes()).slice(-2) +
+    ('0' + date.getUTCSeconds()).slice(-2)
+  );
 }
 
 /**
@@ -331,7 +347,7 @@ function convertDate(val) {
  */
 function validateValue(field, val) {
   if (field.getType() == 'YEAR_MONTH_DAY_HOUR') {
-    val =  convertDate(val);
+    val = convertDate(val);
   }
 
   switch (typeof val) {
