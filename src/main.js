@@ -19,6 +19,9 @@
 //
 //  This copyright notice MUST APPEAR in all copies of the script!
 
+/* eslint-disable prefer-rest-params */
+/* eslint-disable prefer-spread */
+
 /**
  * Throws and logs script exceptions.
  *
@@ -297,7 +300,7 @@ function getFields(request, content) {
   }
   try {
     createFields(fields, types, null, content[0], isInline);
-  } catch () {
+  } catch (e) {
     sendUserError('Unable to identify the data format of one of your fields.');
   }
   return fields;
@@ -316,19 +319,19 @@ function getSchema(request) {
 }
 
 /**
-* Performs a deep merge of objects and returns new object. Does not modify
-* objects (immutable) and merges arrays via concatenation.
-* Thanks to jhildenbiddle https://stackoverflow.com/users/4903063/jhildenbiddle
-* https://stackoverflow.com/questions/27936772/how-to-deep-merge-instead-of-shallow-merge
-*
-* @param            Objects to merge
-* @returns {object} New object with merged key/values
-*/
+ * Performs a deep merge of objects and returns new object. Does not modify
+ * objects (immutable) and merges arrays via concatenation.
+ * Thanks to jhildenbiddle https://stackoverflow.com/users/4903063/jhildenbiddle
+ * https://stackoverflow.com/questions/27936772/how-to-deep-merge-instead-of-shallow-merge
+ *
+ * @param            Objects to merge
+ * @returns {object} New object with merged key/values
+ */
 function mergeDeep() {
- var objects = Array.prototype.slice.call(arguments);
+  var objects = Array.prototype.slice.call(arguments);
 
-  return objects.reduce(function (prev, obj) {
-    Object.keys(obj).forEach(function (key) {
+  return objects.reduce(function(prev, obj) {
+    Object.keys(obj).forEach(function(key) {
       var pVal = prev[key];
       var oVal = obj[key];
 
@@ -394,7 +397,7 @@ function getColumnValue(valuePaths, row) {
   for (var index in valuePaths) {
     var currentPath = valuePaths[index];
 
-    if(row[currentPath] === null){
+    if (row[currentPath] === null) {
       return '';
     }
 
@@ -430,7 +433,7 @@ function getColumns(content, requestedFields) {
 
     requestedFields.asArray().forEach(function(field) {
       var valuePaths = field.getId().split('.');
-      var fieldValue = ( row === null ) ? '' : getColumnValue(valuePaths, row);
+      var fieldValue = row === null ? '' : getColumnValue(valuePaths, row);
 
       rowValues.push(validateValue(field, fieldValue));
     });
